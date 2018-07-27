@@ -88,10 +88,6 @@ public final class LivePreviewActivity extends AppCompatActivity
 
     lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
     lstFoundLocations.setAdapter(new FoundLocationsListAdapter(mainViewModel.getFoundLocations().getValue()));
-
-    mainViewModel.getFoundLocations().observe(this, (val) -> {
-      lstFoundLocations.getAdapter().notifyDataSetChanged();
-    });
   }
 
   @Override
