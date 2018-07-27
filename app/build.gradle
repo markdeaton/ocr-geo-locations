@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 27
+    defaultConfig {
+        applicationId 'com.esri.apl.ocrLocations'
+        minSdkVersion 21
+        targetSdkVersion 27
+        versionCode 1
+        versionName '0.2.0'
+        ndk {
+            /*
+             * Sceneform is available for the following ABIs: armeabi-v7a, arm64-v8a, armv7a,
+             * x86_64 and x86. This app enables arm64-v8a to run on
+             * devices and x86 to run on the emulator.
+             */
+            abiFilters 'armeabi-v7a', 'x86'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    aaptOptions {
+        noCompress "tflite"
+    }
+    productFlavors {
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    dataBinding {
+        enabled true
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.2'
+    // ML Kit dependencies
+    implementation 'com.google.firebase:firebase-core:16.0.1'
+    implementation 'com.google.firebase:firebase-ml-vision:16.0.0'
+    implementation 'com.google.firebase:firebase-ml-vision-image-label-model:15.0.0'
+    implementation 'com.google.firebase:firebase-ml-model-interpreter:16.0.0'
+    implementation 'com.esri.arcgisruntime:arcgis-android:100.3.0'
+    implementation 'android.arch.lifecycle:extensions:1.1.1'
+    annotationProcessor 'android.arch.lifecycle:compiler:1.1.1'
+}
+apply plugin: 'com.google.gms.google-services'
