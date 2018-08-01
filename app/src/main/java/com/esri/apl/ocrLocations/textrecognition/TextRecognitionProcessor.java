@@ -17,7 +17,6 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.esri.apl.ocrLocations.GraphicOverlay;
-import com.esri.apl.ocrLocations.model.FoundLocation;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.ml.vision.FirebaseVision;
@@ -66,11 +65,13 @@ public class TextRecognitionProcessor extends VisionProcessorBase<FirebaseVision
       List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
       for (int j = 0; j < lines.size(); j++) {
         List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
+        mainViewModel.evaluateLocation(lines.get(j));
+
+        // Line evaluator will also evaluate elements; but include element processing logic
+        // to display overlay elements on the camera feed.
         for (int k = 0; k < elements.size(); k++) {
           GraphicOverlay.Graphic textGraphic = new TextGraphic(graphicOverlay, elements.get(k));
           graphicOverlay.add(textGraphic);
-
-          mainViewModel.addFoundLocation(new FoundLocation(elements.get(k).getText(), null));
         }
       }
     }

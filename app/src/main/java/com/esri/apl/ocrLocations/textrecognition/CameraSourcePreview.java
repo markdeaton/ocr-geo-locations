@@ -82,6 +82,10 @@ public class CameraSourcePreview extends ViewGroup {
     }
   }
 
+  public SurfaceView getSurfaceView() {
+    return surfaceView;
+  }
+
   @SuppressLint("MissingPermission")
   private void startIfReady() throws IOException {
     if (startRequested && surfaceAvailable) {

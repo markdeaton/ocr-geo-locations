@@ -4,12 +4,14 @@ import android.support.annotation.NonNull;
 
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
+import com.esri.arcgisruntime.mapping.view.Graphic;
 
 public class FoundLocation {
-  public String text;
-  public Point location;
+  private String text;
+  private Graphic location;
+  private double score;
 
-  public FoundLocation(@NonNull String text, Point location) {
+  public FoundLocation(@NonNull String text, Graphic location) {
     this.text = text;
     this.location = location;
   }
@@ -18,7 +20,8 @@ public class FoundLocation {
   public FoundLocation(@NonNull String text, double lon, double lat) {
     Point pt = new Point(lon, lat, SpatialReferences.getWgs84());
     this.text = text;
-    this.location = pt;
+    Graphic g = new Graphic(pt);
+    this.location = g;
   }
 
   @Override
@@ -35,5 +38,29 @@ public class FoundLocation {
     boolean areLocsEqual = areBothLocsNull
                            || (areBothLocsNotNull && this.location.equals(that.location));*/
     return  areStringsEqual;
+  }
+
+  public String getText() {
+    return text;
+  }
+
+  public void setText(String text) {
+    this.text = text;
+  }
+
+  public Graphic getLocation() {
+    return location;
+  }
+
+  public void setLocation(Graphic location) {
+    this.location = location;
+  }
+
+  public double getScore() {
+    return score;
+  }
+
+  public void setScore(double score) {
+    this.score = score;
   }
 }

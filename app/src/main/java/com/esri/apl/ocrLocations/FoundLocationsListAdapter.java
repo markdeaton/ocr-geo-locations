@@ -43,7 +43,7 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
 
     void bind(FoundLocation foundLocation) {
       TextView txt = (TextView)itemView.findViewById(android.R.id.text1);
-      txt.setText(foundLocation.text);
+      txt.setText(foundLocation.getText());
     }
   }
 

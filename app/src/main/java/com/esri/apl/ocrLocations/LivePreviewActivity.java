@@ -24,14 +24,18 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.TabHost;
 import android.widget.ToggleButton;
 
-import com.esri.apl.ocrLocations.model.FoundLocation;
 import com.esri.apl.ocrLocations.textrecognition.CameraSource;
 import com.esri.apl.ocrLocations.textrecognition.CameraSourcePreview;
 import com.esri.apl.ocrLocations.textrecognition.TextRecognitionProcessor;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
+import com.esri.arcgisruntime.mapping.ArcGISMap;
+import com.esri.arcgisruntime.mapping.Basemap;
+import com.esri.arcgisruntime.mapping.view.MapView;
 import com.google.android.gms.common.annotation.KeepName;
 
 import java.io.IOException;
@@ -51,7 +55,8 @@ public final class LivePreviewActivity extends AppCompatActivity
   private CameraSource cameraSource = null;
   private CameraSourcePreview preview;
   private GraphicOverlay graphicOverlay;
-  private RecyclerView lstFoundLocations;
+
+  private MapView mapView;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -59,8 +64,6 @@ public final class LivePreviewActivity extends AppCompatActivity
     Log.d(TAG, "onCreate");
 
     mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
-    mainViewModel.addFoundLocation(new FoundLocation("One", -118, 34));
-    mainViewModel.addFoundLocation(new FoundLocation("Two", -117, 33));
 
     setContentView(R.layout.activity_live_preview);
 /*    ActivityLivePreviewBinding binding =
@@ -68,6 +71,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     binding.setLifecycleOwner(this);
     binding.setViewmodel(mainViewModel);*/
 
+    // Camera view
     preview = (CameraSourcePreview) findViewById(R.id.firePreview);
     if (preview == null) {
       Log.d(TAG, "Preview is null");
@@ -76,6 +80,11 @@ public final class LivePreviewActivity extends AppCompatActivity
     if (graphicOverlay == null) {
       Log.d(TAG, "graphicOverlay is null");
     }
+
+    // Set up map
+    mapView = (MapView)findViewById(R.id.map);
+    ArcGISMap map = new ArcGISMap(Basemap.createTopographic());
+    mapView.setMap(map);
 
     ToggleButton facingSwitch = (ToggleButton) findViewById(R.id.facingswitch);
     facingSwitch.setOnCheckedChangeListener(this);
@@ -86,9 +95,44 @@ public final class LivePreviewActivity extends AppCompatActivity
       getRuntimePermissions();
     }
 
-    lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
-    lstFoundLocations.setAdapter(new FoundLocationsListAdapter(mainViewModel.getFoundLocations().getValue()));
+    // Set up list view
+    RecyclerView lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
+    lstFoundLocations.setAdapter(new FoundLocationsListAdapter(mainViewModel.getFoundLocations()));
+
+    // Set up tabs
+    TabHost tabhost = (TabHost)findViewById(R.id.tabHost);
+    tabhost.setup();
+    TabHost.TabSpec tsCam = tabhost.newTabSpec(TABID_CAMERA).setIndicator("Camera")
+            .setContent(R.id.tabcontentCamera);
+    tabhost.addTab(tsCam);
+    TabHost.TabSpec tsMap = tabhost.newTabSpec(TABID_MAP).setIndicator("Map")
+            .setContent(R.id.tabcontentMap);
+    tabhost.addTab(tsMap);
+    tabhost.setOnTabChangedListener(mOnTabChanged);
   }
+
+  private static final String TABID_CAMERA = "Camera Tab";
+  private static final String TABID_MAP = "Map Tab";
+
+  TabHost.OnTabChangeListener mOnTabChanged = new TabHost.OnTabChangeListener() {
+    @Override
+    public void onTabChanged(String tabId) {
+      switch (tabId) {
+        case TABID_CAMERA:
+          mapView.pause();
+          mapView.setVisibility(View.GONE);
+          preview.getSurfaceView().setVisibility(View.VISIBLE);
+          startCameraSource();
+          break;
+        case TABID_MAP:
+          preview.stop();
+          preview.getSurfaceView().setVisibility(View.GONE);
+          mapView.setVisibility(View.VISIBLE);
+          mapView.resume();
+          break;
+      }
+    }
+  };
 
   @Override
   public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
