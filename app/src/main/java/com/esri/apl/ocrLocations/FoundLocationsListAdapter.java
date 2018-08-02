@@ -1,6 +1,5 @@
 package com.esri.apl.ocrLocations;
 
-import android.databinding.ObservableList;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -8,14 +7,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.esri.apl.ocrLocations.model.FoundLocation;
+import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
+import com.esri.arcgisruntime.mapping.view.Graphic;
+import com.esri.arcgisruntime.util.ListChangedEvent;
+import com.esri.arcgisruntime.util.ListChangedListener;
+import com.esri.arcgisruntime.util.ListenableList;
 
 public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocationsListAdapter.FoundLocationHolder> {
-  private ObservableList<FoundLocation> foundLocations;
+  private ListenableList<Graphic> foundLocations;
 
-  FoundLocationsListAdapter(ObservableList<FoundLocation> foundLocations) {
+  FoundLocationsListAdapter(ListenableList<Graphic> foundLocations) {
     this.foundLocations = foundLocations;
-    this.foundLocations.addOnListChangedCallback(listChanged);
+    this.foundLocations.addListChangedListener(mListChanged);
   }
 
   @NonNull
@@ -41,38 +44,28 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
       super(itemView);
     }
 
-    void bind(FoundLocation foundLocation) {
+    void bind(Graphic foundLocation) {
       TextView txt = (TextView)itemView.findViewById(android.R.id.text1);
-      txt.setText(foundLocation.getText());
+      String sOCRLoc = foundLocation.getAttributes().get(MainViewModel.ATTR_OCRED_LOCATION_NAME).toString();
+      String sLocName = foundLocation.getAttributes().get(MainViewModel.ATTR_GEOCODED_LOCATION_NAME).toString();
+      txt.setText(sOCRLoc + " -> " + sLocName);
     }
   }
 
-  private ObservableList.OnListChangedCallback<ObservableList<FoundLocation>> listChanged =
-          new ObservableList.OnListChangedCallback<ObservableList<FoundLocation>>() {
+  private ListChangedListener mListChanged = new ListChangedListener() {
     @Override
-    public void onChanged(ObservableList<FoundLocation> sender) {
-      notifyDataSetChanged();
-    }
-
-    @Override
-    public void onItemRangeChanged(ObservableList<FoundLocation> sender, int positionStart, int itemCount) {
-      notifyItemRangeChanged(positionStart, itemCount);
-    }
-
-    @Override
-    public void onItemRangeInserted(ObservableList<FoundLocation> sender, int positionStart, int itemCount) {
-      notifyItemRangeInserted(positionStart, itemCount);
-    }
-
-    @Override
-    public void onItemRangeMoved(ObservableList<FoundLocation> sender, int fromPosition, int toPosition, int itemCount) {
-      notifyItemRangeRemoved(fromPosition, itemCount);
-      notifyItemRangeInserted(toPosition, itemCount);
-    }
-
-    @Override
-    public void onItemRangeRemoved(ObservableList<FoundLocation> sender, int positionStart, int itemCount) {
-      notifyItemRangeRemoved(positionStart, itemCount);
+    public void listChanged(ListChangedEvent listChangedEvent) {
+      switch (listChangedEvent.getAction()) {
+        case ADDED:
+          notifyItemRangeInserted(listChangedEvent.getIndex(), listChangedEvent.getItems().size());
+          break;
+        case REMOVED:
+          notifyItemRangeRemoved(listChangedEvent.getIndex(), listChangedEvent.getItems().size());
+          break;
+        default:
+          notifyDataSetChanged();
+          break;
+      }
     }
   };
 }

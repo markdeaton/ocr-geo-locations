@@ -1,14 +1,15 @@
 <resources>
-    <style name="MaterialTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="MaterialTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowFullscreen">false</item>
-        <item name="android:tabWidgetStyle">@style/MyTabWidgetStyle</item>
+        <item name="android:textColorSecondary">#666666</item>
+        <!--<item name="android:tabWidgetStyle">@style/MyTabWidgetStyle</item>-->
     </style>
 
-    <style name="MyTabWidgetStyle" parent="Widget.Design.TabLayout">
+<!--    <style name="MyTabWidgetStyle" parent="Widget.Design.TabLayout">
         <item name="android:titleTextAppearance">@style/MyTabTextAppearance</item>
     </style>
 
     <style name="MyTabTextAppearance">
         <item name="android:drawable">@android:color/white</item>
-    </style>
+    </style>-->
 </resources>

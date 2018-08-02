@@ -33,14 +33,15 @@ import com.esri.apl.ocrLocations.textrecognition.CameraSource;
 import com.esri.apl.ocrLocations.textrecognition.CameraSourcePreview;
 import com.esri.apl.ocrLocations.textrecognition.TextRecognitionProcessor;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
-import com.esri.arcgisruntime.mapping.ArcGISMap;
-import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.google.android.gms.common.annotation.KeepName;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.TABID_CAMERA;
+import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.TABID_MAP;
 
 /** Demo app showing the various features of ML Kit for Firebase. This class is used to
  * set up continuous frame processing on frames from a camera source. */
@@ -66,16 +67,16 @@ public final class LivePreviewActivity extends AppCompatActivity
     mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
 
     setContentView(R.layout.activity_live_preview);
-/*    ActivityLivePreviewBinding binding =
-            DataBindingUtil.setContentView(this, R.layout.activity_live_preview);
-    binding.setLifecycleOwner(this);
-    binding.setViewmodel(mainViewModel);*/
 
     // Camera view
     preview = (CameraSourcePreview) findViewById(R.id.firePreview);
-    if (preview == null) {
+    if (preview == null)
       Log.d(TAG, "Preview is null");
+    else {
+//      preview.getSurfaceView().setZOrderMediaOverlay(true);
+//      preview.getSurfaceView().setZOrderOnTop(true);
     }
+
     graphicOverlay = (GraphicOverlay) findViewById(R.id.fireFaceOverlay);
     if (graphicOverlay == null) {
       Log.d(TAG, "graphicOverlay is null");
@@ -83,8 +84,9 @@ public final class LivePreviewActivity extends AppCompatActivity
 
     // Set up map
     mapView = (MapView)findViewById(R.id.map);
-    ArcGISMap map = new ArcGISMap(Basemap.createTopographic());
-    mapView.setMap(map);
+//    mapView.setZOrderMediaOverlay(false);
+    mapView.setMap(mainViewModel.getMap());
+    mapView.getGraphicsOverlays().add(mainViewModel.getFoundLocationGraphics());
 
     ToggleButton facingSwitch = (ToggleButton) findViewById(R.id.facingswitch);
     facingSwitch.setOnCheckedChangeListener(this);
@@ -97,7 +99,8 @@ public final class LivePreviewActivity extends AppCompatActivity
 
     // Set up list view
     RecyclerView lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
-    lstFoundLocations.setAdapter(new FoundLocationsListAdapter(mainViewModel.getFoundLocations()));
+    lstFoundLocations.setAdapter(new FoundLocationsListAdapter(
+            mainViewModel.getFoundLocationGraphics().getGraphics()));
 
     // Set up tabs
     TabHost tabhost = (TabHost)findViewById(R.id.tabHost);
@@ -109,26 +112,25 @@ public final class LivePreviewActivity extends AppCompatActivity
             .setContent(R.id.tabcontentMap);
     tabhost.addTab(tsMap);
     tabhost.setOnTabChangedListener(mOnTabChanged);
+    tabhost.setCurrentTabByTag(mainViewModel.getCurrentTab());
   }
-
-  private static final String TABID_CAMERA = "Camera Tab";
-  private static final String TABID_MAP = "Map Tab";
 
   TabHost.OnTabChangeListener mOnTabChanged = new TabHost.OnTabChangeListener() {
     @Override
     public void onTabChanged(String tabId) {
+      mainViewModel.setCurrentTab(tabId);
       switch (tabId) {
         case TABID_CAMERA:
-          mapView.pause();
-          mapView.setVisibility(View.GONE);
+//          mapView.pause();
+          mapView.setVisibility(View.INVISIBLE);
           preview.getSurfaceView().setVisibility(View.VISIBLE);
           startCameraSource();
           break;
         case TABID_MAP:
           preview.stop();
-          preview.getSurfaceView().setVisibility(View.GONE);
+          preview.getSurfaceView().setVisibility(View.INVISIBLE);
           mapView.setVisibility(View.VISIBLE);
-          mapView.resume();
+//          mapView.resume();
           break;
       }
     }
@@ -186,6 +188,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     super.onResume();
     Log.d(TAG, "onResume");
     startCameraSource();
+    mapView.resume();
   }
 
   /** Stops the camera. */
@@ -193,6 +196,7 @@ public final class LivePreviewActivity extends AppCompatActivity
   protected void onPause() {
     super.onPause();
     preview.stop();
+    mapView.pause();
   }
 
   @Override
@@ -201,6 +205,9 @@ public final class LivePreviewActivity extends AppCompatActivity
     if (cameraSource != null) {
       cameraSource.release();
     }
+    // Required so we don't get an error upon rotation
+    mapView.getGraphicsOverlays().clear();
+    mapView.dispose();
   }
 
   private String[] getRequiredPermissions() {

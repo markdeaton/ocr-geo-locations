@@ -2,66 +2,96 @@ package com.esri.apl.ocrLocations.viewmodel;
 
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
-import android.databinding.ObservableArrayList;
 import android.databinding.ObservableList;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.esri.apl.ocrLocations.model.FoundLocation;
 import com.esri.apl.ocrLocations.util.MessageUtils;
+import com.esri.apl.ocrLocations.util.ObservableArrayListCCI;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
+import com.esri.arcgisruntime.mapping.ArcGISMap;
+import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.view.Graphic;
+import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
+import com.esri.arcgisruntime.symbology.Renderer;
+import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
+import com.esri.arcgisruntime.symbology.SimpleRenderer;
 import com.esri.arcgisruntime.tasks.geocode.GeocodeParameters;
 import com.esri.arcgisruntime.tasks.geocode.GeocodeResult;
 import com.esri.arcgisruntime.tasks.geocode.LocatorTask;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class MainViewModel extends AndroidViewModel {
   private static final String TAG = "MainViewModel";
+  /** The initial location name found by OCR */
+  public static final String ATTR_OCRED_LOCATION_NAME = "OCRedLocationName";
+  /** The final name for a location found by the geocoder */
+  public static final String ATTR_GEOCODED_LOCATION_NAME = "ResolvedLocationName";
+  public static final String ATTR_GEOCODE_SCORE = "GeocodeScore";
+  public static final int MIN_GEOCODE_SCORE = 100;
+  /** Tabs */
+  public static final String TABID_CAMERA = "Camera Tab";
+  public static final String TABID_MAP = "Map Tab";
+  private String _currentTab = TABID_CAMERA;
 
   /** Strings found but determined not to represent a geographic location */
-  private ObservableList<String> _rejectedStrings = new ObservableArrayList<>();
-  private ObservableList<FoundLocation> _foundLocations = new ObservableArrayList<>();
-  private List<String> _underEvaluationStrings = new ArrayList<>();
+  private ObservableList<String> _rejectedStrings = new ObservableArrayListCCI();
+  private List<String> _underEvaluationStrings = new ObservableArrayListCCI();
+  private GraphicsOverlay _graphics = new GraphicsOverlay();
 
+  private ArcGISMap _map = new ArcGISMap(Basemap.createTopographic());
   private GeocodeParameters mGeocodeParams;
   private LocatorTask mLocator;
 
   public MainViewModel(@NonNull Application application) {
     super(application);
     mGeocodeParams = new GeocodeParameters();
-    mGeocodeParams.setMaxResults(1); // minscore doesn't work online mGeocodeParams.setMinScore(100);
+    mGeocodeParams.setMaxResults(1);
+    // minscore doesn't work online
+    // mGeocodeParams.setMinScore(100);
     mLocator = new LocatorTask("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer");
+
+    SimpleMarkerSymbol sms = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.parseColor("#55000000"), 12);
+    Renderer rend = new SimpleRenderer(sms);
+    _graphics.setRenderer(rend);
   }
 
   public ObservableList<String> getRejectedStrings() {
     return _rejectedStrings;
   }
 
-  public ObservableList<FoundLocation> getFoundLocations() {
-    return _foundLocations;
+  public GraphicsOverlay getFoundLocationGraphics() {
+    return _graphics;
   }
 
-  /** Add a value to the rejected strings list, even if it's not already there */
+  public ArcGISMap getMap() {
+    return _map;
+  }
+
+  /** Add a value to the rejected strings list, even if it's already there */
   public void addRejectedString(String text) {
      _rejectedStrings.add(text);
   }
 
-  /** Add a value to the found locations list, even if it's not already there */
-  public void addFoundLocation(FoundLocation foundLocation) {
+  /** Add a value to the found locations list, even if it's already there */
+/*  public void addFoundLocation(FoundLocation foundLocation) {
     _foundLocations.add(foundLocation);
+  }*/
+  public void addFoundLocation(Graphic g) {
+    _graphics.getGraphics().add(g);
   }
 
-  /** Check to see whether an element geocodes for known location or specifies coordinates
-   * @param element A single piece of recognized text
-   */
-//  public void evaluateLocation(FirebaseVisionText.Element element) {
-//
-//  }
+  public String getCurrentTab() {
+    return _currentTab;
+  }
+
+  public void setCurrentTab(String _currentTab) {
+    this._currentTab = _currentTab;
+  }
 
   /** Check to see whether various combinations of elements on a line geocode for a known location
    *  or specify coordinates.
@@ -97,13 +127,14 @@ public class MainViewModel extends AndroidViewModel {
           try {
             List<GeocodeResult> results = res.get();
             // Here's where we have to filter out low-quality matches
-            if (results.size() > 0 && results.get(0).getScore() >= 100) {
+            if (results.size() > 0 && results.get(0).getScore() >= MIN_GEOCODE_SCORE) {
               GeocodeResult geocodeResult = results.get(0);
               Graphic g = new Graphic(geocodeResult.getDisplayLocation(),
                       geocodeResult.getAttributes());
-              FoundLocation fl = new FoundLocation(sLoc, g);
-              fl.setScore(geocodeResult.getScore());
-              addFoundLocation(fl);
+              g.getAttributes().put(ATTR_OCRED_LOCATION_NAME, sLoc);
+              g.getAttributes().put(ATTR_GEOCODED_LOCATION_NAME, geocodeResult.getLabel());
+              g.getAttributes().put(ATTR_GEOCODE_SCORE, geocodeResult.getScore());
+              addFoundLocation(g);
               sMsg += "succeeded" + " - score: " + geocodeResult.getScore() + " - label: '" + geocodeResult.getLabel() + "'";
             } else {
               addRejectedString(sLoc);
@@ -129,9 +160,11 @@ public class MainViewModel extends AndroidViewModel {
     return _rejectedStrings.contains(sLoc);
   }
   private boolean isStringFound(String sLoc) {
-    // Create a new, fake FoundLocation just to see if it already exists.
-    // This works because FoundLocation.equals() only compares the text portion, not the graphic.
-    return _foundLocations.contains(new FoundLocation(sLoc, null));
+    for (Graphic g : _graphics.getGraphics()) {
+      if (((String)g.getAttributes().get(ATTR_OCRED_LOCATION_NAME)).equalsIgnoreCase(sLoc))
+        return true;
+    }
+    return false;
   }
   private boolean isStringUnderEvaluation(String sLoc) {
     return _underEvaluationStrings.contains(sLoc);
