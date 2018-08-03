@@ -15,6 +15,6 @@ public class MapTouchListener extends DefaultMapViewOnTouchListener {
   public boolean onSingleTapConfirmed(MotionEvent e) {
     mMapView.getCallout().dismiss();
 
-    return super.onSingleTapConfirmed(e);
+    return false;
   }
 }
