@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.esri.apl.ocrLocations.model.FoundLocationClickListener;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.util.ListChangedEvent;
@@ -15,10 +16,12 @@ import com.esri.arcgisruntime.util.ListenableList;
 
 public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocationsListAdapter.FoundLocationHolder> {
   private ListenableList<Graphic> foundLocations;
+  private FoundLocationClickListener mLocationClicked;
 
-  FoundLocationsListAdapter(ListenableList<Graphic> foundLocations) {
+  FoundLocationsListAdapter(ListenableList<Graphic> foundLocations, FoundLocationClickListener onClick) {
     this.foundLocations = foundLocations;
     this.foundLocations.addListChangedListener(mListChanged);
+    this.mLocationClicked = onClick;
   }
 
   @NonNull
@@ -42,6 +45,7 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
   class FoundLocationHolder extends RecyclerView.ViewHolder {
     FoundLocationHolder(View itemView) {
       super(itemView);
+      itemView.setOnClickListener(mItemClickListener);
     }
 
     void bind(Graphic foundLocation) {
@@ -50,7 +54,17 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
       String sLocName = foundLocation.getAttributes().get(MainViewModel.ATTR_GEOCODED_LOCATION_NAME).toString();
       txt.setText(sOCRLoc + " -> " + sLocName);
     }
+
+    private View.OnClickListener mItemClickListener = new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        int pos = getAdapterPosition();
+        Graphic g = foundLocations.get(pos);
+        mLocationClicked.itemClicked(g);
+      }
+    };
   }
+
 
   private ListChangedListener mListChanged = new ListChangedListener() {
     @Override

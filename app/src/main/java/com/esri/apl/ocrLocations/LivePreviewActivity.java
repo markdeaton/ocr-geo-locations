@@ -27,12 +27,17 @@ import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.esri.apl.ocrLocations.model.FoundLocationClickListener;
 import com.esri.apl.ocrLocations.textrecognition.CameraSource;
 import com.esri.apl.ocrLocations.textrecognition.CameraSourcePreview;
 import com.esri.apl.ocrLocations.textrecognition.TextRecognitionProcessor;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
+import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.mapping.view.Callout;
+import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.google.android.gms.common.annotation.KeepName;
 
@@ -40,6 +45,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.ATTR_GEOCODED_LOCATION_NAME;
+import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.ATTR_GEOCODE_SCORE;
+import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.ATTR_OCRED_LOCATION_NAME;
 import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.TABID_CAMERA;
 import static com.esri.apl.ocrLocations.viewmodel.MainViewModel.TABID_MAP;
 
@@ -100,7 +108,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     // Set up list view
     RecyclerView lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
     lstFoundLocations.setAdapter(new FoundLocationsListAdapter(
-            mainViewModel.getFoundLocationGraphics().getGraphics()));
+            mainViewModel.getFoundLocationGraphics().getGraphics(), mListItemClicked));
 
     // Set up tabs
     TabHost tabhost = (TabHost)findViewById(R.id.tabHost);
@@ -133,6 +141,25 @@ public final class LivePreviewActivity extends AppCompatActivity
 //          mapView.resume();
           break;
       }
+    }
+  };
+
+  private FoundLocationClickListener mListItemClicked = new FoundLocationClickListener() {
+    @Override
+    public void itemClicked(Graphic g) {
+      Point pt = (Point)g.getGeometry();
+
+      TextView tv = (TextView)getLayoutInflater().inflate(R.layout.callout, mapView, false);
+      Callout callout = mapView.getCallout();
+      callout.setLocation((Point)g.getGeometry());
+      tv.setText(getString(R.string.callout,
+              g.getAttributes().get(ATTR_OCRED_LOCATION_NAME.toString()),
+              g.getAttributes().get(ATTR_GEOCODED_LOCATION_NAME).toString(),
+              (double)g.getAttributes().get(ATTR_GEOCODE_SCORE)));
+      callout.setContent(tv);
+      callout.show();
+
+      mapView.setViewpointCenterAsync(pt);
     }
   };
 

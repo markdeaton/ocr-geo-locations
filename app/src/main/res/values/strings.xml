@@ -40,4 +40,6 @@
     <string name="toggle_turn_off">Back</string>
     <!--<string name="desc_camera_source_activity">Vision detectors demo with live camera preview</string>-->
     <!--<string name="desc_still_image_activity">Vision detectors demo with a still image</string>-->
+
+    <string name="callout">Found text: "%1$s"\nLocation name: "%2$s"\nGeocode score: %3$.0f</string>
 </resources>
