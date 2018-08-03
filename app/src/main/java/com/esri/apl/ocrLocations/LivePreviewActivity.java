@@ -34,6 +34,7 @@ import com.esri.apl.ocrLocations.model.FoundLocationClickListener;
 import com.esri.apl.ocrLocations.textrecognition.CameraSource;
 import com.esri.apl.ocrLocations.textrecognition.CameraSourcePreview;
 import com.esri.apl.ocrLocations.textrecognition.TextRecognitionProcessor;
+import com.esri.apl.ocrLocations.util.MapTouchListener;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.mapping.view.Callout;
@@ -95,6 +96,8 @@ public final class LivePreviewActivity extends AppCompatActivity
 //    mapView.setZOrderMediaOverlay(false);
     mapView.setMap(mainViewModel.getMap());
     mapView.getGraphicsOverlays().add(mainViewModel.getFoundLocationGraphics());
+    // Allow the user to dismiss a callout by tapping the map
+    mapView.setOnTouchListener(new MapTouchListener(this, mapView));
 
     ToggleButton facingSwitch = (ToggleButton) findViewById(R.id.facingswitch);
     facingSwitch.setOnCheckedChangeListener(this);
