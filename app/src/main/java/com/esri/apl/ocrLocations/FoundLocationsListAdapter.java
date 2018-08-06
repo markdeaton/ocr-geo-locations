@@ -10,13 +10,13 @@ import android.widget.TextView;
 import com.esri.apl.ocrLocations.model.FoundLocationClickListener;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
 import com.esri.arcgisruntime.mapping.view.Graphic;
-import com.esri.arcgisruntime.util.ListChangedEvent;
 import com.esri.arcgisruntime.util.ListChangedListener;
 import com.esri.arcgisruntime.util.ListenableList;
 
 public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocationsListAdapter.FoundLocationHolder> {
   private ListenableList<Graphic> foundLocations;
   private FoundLocationClickListener mLocationClicked;
+  private RecyclerView mRecyclerView;
 
   FoundLocationsListAdapter(ListenableList<Graphic> foundLocations, FoundLocationClickListener onClick) {
     this.foundLocations = foundLocations;
@@ -42,6 +42,21 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
     return foundLocations.size();
   }
 
+  @Override
+  public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+    super.onAttachedToRecyclerView(recyclerView);
+    this.mRecyclerView = recyclerView;
+  }
+
+  public void selectItem(Graphic g) {
+    for (Graphic gFl : foundLocations) {
+      gFl.setSelected(g != null && gFl == g);
+    }
+    notifyDataSetChanged();
+
+    if (mRecyclerView != null) mRecyclerView.scrollToPosition(foundLocations.indexOf(g));
+  }
+
   class FoundLocationHolder extends RecyclerView.ViewHolder {
     FoundLocationHolder(View itemView) {
       super(itemView);
@@ -53,6 +68,7 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
       String sOCRLoc = foundLocation.getAttributes().get(MainViewModel.ATTR_OCRED_LOCATION_NAME).toString();
       String sLocName = foundLocation.getAttributes().get(MainViewModel.ATTR_GEOCODED_LOCATION_NAME).toString();
       txt.setText(sOCRLoc + " -> " + sLocName);
+      txt.setSelected(foundLocation.isSelected());
     }
 
     private View.OnClickListener mItemClickListener = new View.OnClickListener() {
@@ -66,20 +82,17 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
   }
 
 
-  private ListChangedListener mListChanged = new ListChangedListener() {
-    @Override
-    public void listChanged(ListChangedEvent listChangedEvent) {
-      switch (listChangedEvent.getAction()) {
-        case ADDED:
-          notifyItemRangeInserted(listChangedEvent.getIndex(), listChangedEvent.getItems().size());
-          break;
-        case REMOVED:
-          notifyItemRangeRemoved(listChangedEvent.getIndex(), listChangedEvent.getItems().size());
-          break;
-        default:
-          notifyDataSetChanged();
-          break;
-      }
+  private ListChangedListener mListChanged = listChangedEvent -> {
+    switch (listChangedEvent.getAction()) {
+      case ADDED:
+        notifyItemRangeInserted(listChangedEvent.getIndex(), listChangedEvent.getItems().size());
+        break;
+      case REMOVED:
+        notifyItemRangeRemoved(listChangedEvent.getIndex(), listChangedEvent.getItems().size());
+        break;
+      default:
+        notifyDataSetChanged();
+        break;
     }
   };
 }

@@ -73,7 +73,7 @@ public class MainViewModel extends AndroidViewModel {
   }
 
   /** Add a value to the rejected strings list, even if it's already there */
-  public void addRejectedString(String text) {
+  private void addRejectedString(String text) {
      _rejectedStrings.add(text);
   }
 
@@ -81,7 +81,7 @@ public class MainViewModel extends AndroidViewModel {
 /*  public void addFoundLocation(FoundLocation foundLocation) {
     _foundLocations.add(foundLocation);
   }*/
-  public void addFoundLocation(Graphic g) {
+  private void addFoundLocation(Graphic g) {
     _graphics.getGraphics().add(g);
   }
 

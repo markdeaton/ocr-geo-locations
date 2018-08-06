@@ -67,6 +67,7 @@ public final class LivePreviewActivity extends AppCompatActivity
   private GraphicOverlay graphicOverlay;
 
   private MapView mapView;
+  RecyclerView lstFoundLocations;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -97,7 +98,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     mapView.setMap(mainViewModel.getMap());
     mapView.getGraphicsOverlays().add(mainViewModel.getFoundLocationGraphics());
     // Allow the user to dismiss a callout by tapping the map
-    mapView.setOnTouchListener(new MapTouchListener(this, mapView));
+    mapView.setOnTouchListener(new MapTouchListener(this, mapView, mListItemClicked));
 
     ToggleButton facingSwitch = (ToggleButton) findViewById(R.id.facingswitch);
     facingSwitch.setOnCheckedChangeListener(this);
@@ -109,7 +110,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     }
 
     // Set up list view
-    RecyclerView lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
+    lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
     lstFoundLocations.setAdapter(new FoundLocationsListAdapter(
             mainViewModel.getFoundLocationGraphics().getGraphics(), mListItemClicked));
 
@@ -147,22 +148,26 @@ public final class LivePreviewActivity extends AppCompatActivity
     }
   };
 
+  /** Handle location selection, whether in the list or on the map */
   private FoundLocationClickListener mListItemClicked = new FoundLocationClickListener() {
     @Override
     public void itemClicked(Graphic g) {
-      Point pt = (Point)g.getGeometry();
+      if (g != null) {
+        Point pt = (Point) g.getGeometry();
+        mapView.setViewpointCenterAsync(pt);
 
-      TextView tv = (TextView)getLayoutInflater().inflate(R.layout.callout, mapView, false);
-      Callout callout = mapView.getCallout();
-      callout.setLocation((Point)g.getGeometry());
-      tv.setText(getString(R.string.callout,
-              g.getAttributes().get(ATTR_OCRED_LOCATION_NAME.toString()),
-              g.getAttributes().get(ATTR_GEOCODED_LOCATION_NAME).toString(),
-              (double)g.getAttributes().get(ATTR_GEOCODE_SCORE)));
-      callout.setContent(tv);
-      callout.show();
+        TextView tv = (TextView)getLayoutInflater().inflate(R.layout.callout, mapView, false);
+        Callout callout = mapView.getCallout();
+        callout.setLocation((Point)g.getGeometry());
+        tv.setText(getString(R.string.callout,
+                g.getAttributes().get(ATTR_OCRED_LOCATION_NAME.toString()),
+                g.getAttributes().get(ATTR_GEOCODED_LOCATION_NAME).toString(),
+                (double)g.getAttributes().get(ATTR_GEOCODE_SCORE)));
+        callout.setContent(tv);
+        callout.show();
+      }
 
-      mapView.setViewpointCenterAsync(pt);
+      ((FoundLocationsListAdapter)lstFoundLocations.getAdapter()).selectItem(g);
     }
   };
 

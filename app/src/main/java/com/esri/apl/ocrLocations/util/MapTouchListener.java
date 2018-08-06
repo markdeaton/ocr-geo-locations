@@ -1,19 +1,53 @@
 package com.esri.apl.ocrLocations.util;
 
 import android.content.Context;
+import android.graphics.Point;
+import android.util.Log;
 import android.view.MotionEvent;
 
+import com.esri.apl.ocrLocations.model.FoundLocationClickListener;
+import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener;
+import com.esri.arcgisruntime.mapping.view.Graphic;
+import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
+import com.esri.arcgisruntime.mapping.view.IdentifyGraphicsOverlayResult;
 import com.esri.arcgisruntime.mapping.view.MapView;
 
 public class MapTouchListener extends DefaultMapViewOnTouchListener {
-  public MapTouchListener(Context context, MapView mapView) {
+  private final static String TAG = "MapTouchListener";
+  private FoundLocationClickListener mOnLocationClick;
+
+  public MapTouchListener(Context context, MapView mapView, FoundLocationClickListener onClick) {
     super(context, mapView);
+    this.mOnLocationClick = onClick;
   }
 
   @Override
   public boolean onSingleTapConfirmed(MotionEvent e) {
     mMapView.getCallout().dismiss();
+
+    // Identify for points near touched location
+    // Note: this will break if more than one graphics overlay exist.
+    if (mMapView.getGraphicsOverlays().size() < 1) return false;
+
+    GraphicsOverlay govl = mMapView.getGraphicsOverlays().get(0);
+
+    ListenableFuture<IdentifyGraphicsOverlayResult> fres =
+            mMapView.identifyGraphicsOverlayAsync(govl,
+                    new Point(Math.round(e.getX()), Math.round(e.getY())),
+                    2f, false, 1);
+    fres.addDoneListener(() -> {
+      try {
+        if (fres.isDone()) {
+          IdentifyGraphicsOverlayResult res = fres.get();
+          if (res.getError() != null) throw res.getError();
+          Graphic g = res.getGraphics().size() > 0 ? res.getGraphics().get(0) : null;
+          mOnLocationClick.itemClicked(g);
+        }
+      } catch (Exception exc) {
+        Log.e(TAG, "Error identifying graphics:" + exc.getLocalizedMessage(), exc);
+      }
+    });
 
     return false;
   }
