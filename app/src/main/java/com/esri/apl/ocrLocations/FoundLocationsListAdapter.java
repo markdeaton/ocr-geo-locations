@@ -50,9 +50,13 @@ public class FoundLocationsListAdapter extends RecyclerView.Adapter<FoundLocatio
 
   public void selectItem(Graphic g) {
     for (Graphic gFl : foundLocations) {
-      gFl.setSelected(g != null && gFl == g);
+      boolean bShouldbeSelected = g != null && gFl == g;
+      if (gFl.isSelected() != bShouldbeSelected) {
+        gFl.setSelected(bShouldbeSelected);
+        notifyItemChanged(foundLocations.indexOf(gFl));
+      }
     }
-    notifyDataSetChanged();
+//    notifyDataSetChanged();
 
     if (mRecyclerView != null) mRecyclerView.scrollToPosition(foundLocations.indexOf(g));
   }

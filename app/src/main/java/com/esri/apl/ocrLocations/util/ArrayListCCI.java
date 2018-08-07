@@ -1,12 +1,12 @@
 package com.esri.apl.ocrLocations.util;
 
-import android.databinding.ObservableArrayList;
+import java.util.ArrayList;
 
 /**
- * The only way this differs from a normal ObservableArrayList is that its contains()
+ * The only way this differs from a normal ArrayList is that its contains()
  * method compares strings insensitive to case.
  */
-public class ObservableArrayListCCI extends ObservableArrayList<String> {
+public class ArrayListCCI extends ArrayList<String> {
   @Override
   public boolean contains(Object o) {
     String sVal = (String)o;

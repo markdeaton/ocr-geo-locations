@@ -2,13 +2,12 @@ package com.esri.apl.ocrLocations.viewmodel;
 
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
-import android.databinding.ObservableList;
 import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.esri.apl.ocrLocations.util.ArrayListCCI;
 import com.esri.apl.ocrLocations.util.MessageUtils;
-import com.esri.apl.ocrLocations.util.ObservableArrayListCCI;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
@@ -39,8 +38,8 @@ public class MainViewModel extends AndroidViewModel {
   private String _currentTab = TABID_CAMERA;
 
   /** Strings found but determined not to represent a geographic location */
-  private ObservableList<String> _rejectedStrings = new ObservableArrayListCCI();
-  private List<String> _underEvaluationStrings = new ObservableArrayListCCI();
+  private List<String> _rejectedStrings = new ArrayListCCI();
+  private List<String> _underEvaluationStrings = new ArrayListCCI();
   private GraphicsOverlay _graphics = new GraphicsOverlay();
 
   private ArcGISMap _map = new ArcGISMap(Basemap.createTopographic());
@@ -60,7 +59,7 @@ public class MainViewModel extends AndroidViewModel {
     _graphics.setRenderer(rend);
   }
 
-  public ObservableList<String> getRejectedStrings() {
+  public List<String> getRejectedStrings() {
     return _rejectedStrings;
   }
 
@@ -150,10 +149,6 @@ public class MainViewModel extends AndroidViewModel {
         });
       }
     }
-/*    for (int iElement = 0; iElement < lineElements; iElement++) {
-      FirebaseVisionText.Element element = line.getElements().get(iElement);
-      addFoundLocation(new FoundLocation(element.getText(), null));
-    }*/
   }
 
   private boolean isStringRejected(String sLoc) {

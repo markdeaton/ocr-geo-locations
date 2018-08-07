@@ -15,6 +15,7 @@ import com.esri.arcgisruntime.mapping.view.MapView;
 
 public class MapTouchListener extends DefaultMapViewOnTouchListener {
   private final static String TAG = "MapTouchListener";
+  private final static double TOLERANCE = 5d;
   private FoundLocationClickListener mOnLocationClick;
 
   public MapTouchListener(Context context, MapView mapView, FoundLocationClickListener onClick) {
@@ -35,7 +36,7 @@ public class MapTouchListener extends DefaultMapViewOnTouchListener {
     ListenableFuture<IdentifyGraphicsOverlayResult> fres =
             mMapView.identifyGraphicsOverlayAsync(govl,
                     new Point(Math.round(e.getX()), Math.round(e.getY())),
-                    2f, false, 1);
+                    TOLERANCE, false, 1);
     fres.addDoneListener(() -> {
       try {
         if (fres.isDone()) {
