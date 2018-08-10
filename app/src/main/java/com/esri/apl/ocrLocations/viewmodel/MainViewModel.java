@@ -11,6 +11,7 @@ import com.esri.apl.ocrLocations.util.MessageUtils;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
+import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.symbology.Renderer;
@@ -43,6 +44,7 @@ public class MainViewModel extends AndroidViewModel {
   private GraphicsOverlay _graphics = new GraphicsOverlay();
 
   private ArcGISMap _map = new ArcGISMap(Basemap.createTopographic());
+  private Viewpoint _currentViewpoint = _map.getInitialViewpoint();
   private GeocodeParameters mGeocodeParams;
   private LocatorTask mLocator;
 
@@ -82,6 +84,14 @@ public class MainViewModel extends AndroidViewModel {
   }*/
   private void addFoundLocation(Graphic g) {
     _graphics.getGraphics().add(g);
+  }
+
+  public Viewpoint getCurrentViewpoint() {
+    return _currentViewpoint;
+  }
+
+  public void setCurrentViewpoint(Viewpoint _currentViewpoint) {
+    this._currentViewpoint = _currentViewpoint;
   }
 
   public String getCurrentTab() {

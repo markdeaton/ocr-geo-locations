@@ -37,9 +37,12 @@ import com.esri.apl.ocrLocations.textrecognition.TextRecognitionProcessor;
 import com.esri.apl.ocrLocations.util.MapTouchListener;
 import com.esri.apl.ocrLocations.viewmodel.MainViewModel;
 import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.Callout;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.mapping.view.NavigationChangedEvent;
+import com.esri.arcgisruntime.mapping.view.NavigationChangedListener;
 import com.google.android.gms.common.annotation.KeepName;
 
 import java.io.IOException;
@@ -99,6 +102,17 @@ public final class LivePreviewActivity extends AppCompatActivity
     mapView.getGraphicsOverlays().add(mainViewModel.getFoundLocationGraphics());
     // Allow the user to dismiss a callout by tapping the map
     mapView.setOnTouchListener(new MapTouchListener(this, mapView, mListItemClicked));
+    if (mainViewModel.getCurrentViewpoint() != null)
+      mapView.setViewpointAsync(mainViewModel.getCurrentViewpoint());
+    mapView.addNavigationChangedListener(new NavigationChangedListener() {
+      @Override
+      public void navigationChanged(NavigationChangedEvent navigationChangedEvent) {
+        if (navigationChangedEvent.isNavigating()) return;
+        Viewpoint vp =
+                navigationChangedEvent.getSource().getCurrentViewpoint(Viewpoint.Type.CENTER_AND_SCALE);
+        mainViewModel.setCurrentViewpoint(vp);
+      }
+    });
 
     ToggleButton facingSwitch = (ToggleButton) findViewById(R.id.facingswitch);
     facingSwitch.setOnCheckedChangeListener(this);
@@ -113,6 +127,13 @@ public final class LivePreviewActivity extends AppCompatActivity
     lstFoundLocations = (RecyclerView) findViewById(R.id.lstLocations);
     lstFoundLocations.setAdapter(new FoundLocationsListAdapter(
             mainViewModel.getFoundLocationGraphics().getGraphics(), mListItemClicked));
+    // Show callout if any graphics were previously selected
+    for (Graphic g : mainViewModel.getFoundLocationGraphics().getGraphics()) {
+      if (g.isSelected()) {
+        mListItemClicked.showCallout(g);
+        break;
+      }
+    }
 
     // Set up tabs
     TabHost tabhost = (TabHost)findViewById(R.id.tabHost);
@@ -156,18 +177,22 @@ public final class LivePreviewActivity extends AppCompatActivity
         Point pt = (Point) g.getGeometry();
         mapView.setViewpointCenterAsync(pt);
 
-        TextView tv = (TextView)getLayoutInflater().inflate(R.layout.callout, mapView, false);
-        Callout callout = mapView.getCallout();
-        callout.setLocation((Point)g.getGeometry());
-        tv.setText(getString(R.string.callout,
-                g.getAttributes().get(ATTR_OCRED_LOCATION_NAME.toString()),
-                g.getAttributes().get(ATTR_GEOCODED_LOCATION_NAME).toString(),
-                (double)g.getAttributes().get(ATTR_GEOCODE_SCORE)));
-        callout.setContent(tv);
-        callout.show();
+        showCallout(g);
       }
 
       ((FoundLocationsListAdapter)lstFoundLocations.getAdapter()).selectItem(g);
+    }
+
+    public void showCallout(Graphic g) {
+      TextView tv = (TextView)getLayoutInflater().inflate(R.layout.callout, mapView, false);
+      Callout callout = mapView.getCallout();
+      callout.setLocation((Point)g.getGeometry());
+      tv.setText(getString(R.string.callout,
+              g.getAttributes().get(ATTR_OCRED_LOCATION_NAME).toString(),
+              g.getAttributes().get(ATTR_GEOCODED_LOCATION_NAME).toString(),
+              (double)g.getAttributes().get(ATTR_GEOCODE_SCORE)));
+      callout.setContent(tv);
+      callout.show();
     }
   };
 
